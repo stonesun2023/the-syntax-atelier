@@ -1,10 +1,12 @@
 // src/components/ArchiveMode.jsx
 import { useState, useEffect } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
-import { getAllQuizRecords } from '../services/db';
+import { getAllQuizRecords, getUnlockedAchievements } from '../services/db';
+import ShareCard from './ShareCard';
 
 export default function ArchiveMode() {
   const [records, setRecords] = useState([]);
+  const [achievements, setAchievements] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -13,6 +15,10 @@ export default function ArchiveMode() {
         // 真实调用 getAllQuizRecords() 获取数据
         const quizRecords = await getAllQuizRecords();
         setRecords(quizRecords);
+        
+        // 获取成就数据
+        const unlockedAchievements = await getUnlockedAchievements();
+        setAchievements(unlockedAchievements);
       } catch (error) {
         console.error('加载档案数据失败:', error);
       } finally {
@@ -135,6 +141,16 @@ export default function ArchiveMode() {
           ))}
         </div>
       </div>
+
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-apple-black mb-4">成就徽章</h3>
+        <AchievementGrid achievements={achievements} />
+      </div>
+
+      <ShareCard 
+        achievements={achievements} 
+        overallAccuracy={calculateOverallAccuracy(records)}
+      />
     </div>
   );
 }
@@ -267,4 +283,75 @@ function getReviewAdvice(questionType) {
 function truncateText(text, maxLength) {
   if (text.length <= maxLength) return text;
   return text.substring(0, maxLength) + '...';
+}
+
+// 成就徽章网格组件
+function AchievementGrid({ achievements }) {
+  const allAchievements = [
+    {
+      id: 'first_analysis',
+      name: '手术室学徒',
+      emoji: '🔬',
+      condition: '完成首次解构'
+    },
+    {
+      id: 'century_sentences',
+      name: '百句斩',
+      emoji: '⚔️',
+      condition: '累计解构句子数 ≥ 100'
+    },
+    {
+      id: 'imagery_master',
+      name: '神韵大师',
+      emoji: '✨',
+      condition: 'L3 题型历史正确率 ≥ 70%（至少答过5题）'
+    },
+    {
+      id: 'modifier_hunter',
+      name: '定语从句猎手',
+      emoji: '🎯',
+      condition: 'L2 题型历史正确率 ≥ 80%（至少答过5题）'
+    },
+    {
+      id: 'inversion_terminator',
+      name: '倒装句终结者',
+      emoji: '🏆',
+      condition: 'L4 题型历史正确率 ≥ 80%（至少答过5题）'
+    }
+  ];
+
+  const unlockedIds = achievements.map(a => a.achievementId);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      {allAchievements.map((achievement) => {
+        const isUnlocked = unlockedIds.includes(achievement.id);
+        
+        return (
+          <div
+            key={achievement.id}
+            className={`p-4 rounded-2xl border-2 transition-all ${
+              isUnlocked
+                ? 'border-apple-black bg-white'
+                : 'border-gray-200 bg-gray-50 grayscale'
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <span className={`text-3xl ${isUnlocked ? '' : 'opacity-50'}`}>
+                {achievement.emoji}
+              </span>
+              <div className="flex-1">
+                <div className={`font-semibold ${isUnlocked ? 'text-apple-black' : 'text-gray-400'}`}>
+                  {achievement.name}
+                </div>
+                <div className={`text-sm ${isUnlocked ? 'text-apple-muted' : 'text-gray-400'}`}>
+                  {isUnlocked ? '已解锁' : achievement.condition}
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }

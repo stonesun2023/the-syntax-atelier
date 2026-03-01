@@ -1,9 +1,10 @@
 // src/components/QuizResult.jsx
 import { useState } from 'react';
 import { generateQuiz } from '../services/claudeApi';
-import { saveQuizRecord } from '../services/db';
+import { saveQuizRecord, getAllQuizRecords } from '../services/db';
+import { checkAndUnlockAchievements } from '../services/achievementEngine';
 
-export default function QuizResult({ results, sentence, onRetry, onBack }) {
+export default function QuizResult({ results, sentence, onRetry, onBack, onAchievementsUnlocked }) {
   const [analysis, setAnalysis] = useState(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
@@ -156,6 +157,14 @@ ${results.map((r, i) => `第${i+1}题：${r.isCorrect ? '✓ 答对' : r.skipped
               accuracy: accuracy
             };
             await saveQuizRecord(record);
+            
+            // 检测并解锁成就
+            const allRecords = await getAllQuizRecords();
+            const newlyUnlocked = await checkAndUnlockAchievements('quiz_complete', { quizRecords: allRecords });
+            if (newlyUnlocked.length > 0 && onAchievementsUnlocked) {
+              onAchievementsUnlocked(newlyUnlocked);
+            }
+            
             onRetry();
           }}
           className="flex-1 bg-apple-blue text-white py-3 rounded-full font-medium hover:bg-blue-600 transition-colors"
@@ -177,6 +186,14 @@ ${results.map((r, i) => `第${i+1}题：${r.isCorrect ? '✓ 答对' : r.skipped
               accuracy: accuracy
             };
             await saveQuizRecord(record);
+            
+            // 检测并解锁成就
+            const allRecords = await getAllQuizRecords();
+            const newlyUnlocked = await checkAndUnlockAchievements('quiz_complete', { quizRecords: allRecords });
+            if (newlyUnlocked.length > 0 && onAchievementsUnlocked) {
+              onAchievementsUnlocked(newlyUnlocked);
+            }
+            
             onBack();
           }}
           className="flex-1 bg-gray-100 text-apple-black py-3 rounded-full font-medium hover:bg-gray-200 transition-colors"

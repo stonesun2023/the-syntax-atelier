@@ -5,8 +5,10 @@ import AnalysisPanel from './components/AnalysisPanel';
 import ChallengeMode from './components/ChallengeMode';
 import ArchiveMode from './components/ArchiveMode';
 import SettingsPanel from './components/SettingsPanel';
+import AchievementToast from './components/AchievementToast';
 import { analyzeSentence } from './services/claudeApi';
-import { saveAnalysis, checkAndUnlockAchievements } from './services/db';
+import { saveAnalysis, getAllQuizRecords } from './services/db';
+import { checkAndUnlockAchievements } from './services/achievementEngine';
 
 export default function App() {
   const [mode, setMode] = useState('analyze');
@@ -27,8 +29,10 @@ export default function App() {
       const result = await analyzeSentence(sentence);
       setAnalysisResult(result);
       await saveAnalysis(sentence, result);
-      const unlocked = await checkAndUnlockAchievements();
-      if (unlocked.length > 0) setNewAchievements(unlocked);
+      
+      // 检测并解锁成就
+      const newlyUnlocked = await checkAndUnlockAchievements('analysis_complete', { sentence, analysisResult: result });
+      if (newlyUnlocked.length > 0) setNewAchievements(newlyUnlocked);
     } catch (err) {
       setError(err.message);
     } finally {

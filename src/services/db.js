@@ -3,7 +3,7 @@ import Dexie from 'dexie';
 
 const db = new Dexie('SyntaxAtelierDB');
 
-db.version(3).stores({
+db.version(4).stores({
   analyses: '++id, sentence, createdAt',
   quizRecords: '++id, date',
   achievements: '++id, achievementId, unlockedAt',
@@ -89,5 +89,22 @@ export async function saveQuizRecord(record) {
 export async function getAllQuizRecords() {
   return await db.quizRecords.orderBy('date').reverse().toArray();
 }
+
+// 新增方法：解锁一个成就（如已解锁则忽略，不重复写入）
+export async function unlockAchievement(achievementId) {
+  const unlocked = await db.achievements.toArray();
+  const unlockedIds = unlocked.map(a => a.achievementId);
+  
+  if (unlockedIds.includes(achievementId)) {
+    return false; // 已解锁，不重复写入
+  }
+  
+  await db.achievements.add({ 
+    achievementId: achievementId, 
+    unlockedAt: new Date().toISOString() 
+  });
+  return true; // 成功解锁
+}
+
 
 export default db;
