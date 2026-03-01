@@ -1,6 +1,7 @@
 // src/components/ArchiveMode.jsx
 import { useState, useEffect } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
+import { getAllQuizRecords } from '../services/db';
 
 export default function ArchiveMode() {
   const [records, setRecords] = useState([]);
@@ -9,40 +10,9 @@ export default function ArchiveMode() {
   useEffect(() => {
     async function loadData() {
       try {
-        // 模拟 API 调用延迟
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // 模拟数据，实际使用时替换为真实的 getAllQuizRecords()
-        const mockRecords = [
-          {
-            id: 1,
-            sentence: "The book that I read yesterday was very interesting.",
-            date: "2026-03-01T10:00:00Z",
-            results: [
-              { questionType: "L1_skeleton", isCorrect: true, skipped: false },
-              { questionType: "L2_reorder", isCorrect: false, skipped: false },
-              { questionType: "L3_imagery", isCorrect: true, skipped: false },
-              { questionType: "L4_strategy", isCorrect: true, skipped: false }
-            ],
-            score: 3,
-            accuracy: 75
-          },
-          {
-            id: 2,
-            sentence: "Although it was raining, we decided to go for a walk.",
-            date: "2026-03-01T14:00:00Z",
-            results: [
-              { questionType: "L1_skeleton", isCorrect: false, skipped: false },
-              { questionType: "L2_reorder", isCorrect: true, skipped: false },
-              { questionType: "L3_imagery", isCorrect: false, skipped: true },
-              { questionType: "L4_strategy", isCorrect: true, skipped: false }
-            ],
-            score: 2,
-            accuracy: 66
-          }
-        ];
-        
-        setRecords(mockRecords);
+        // 真实调用 getAllQuizRecords() 获取数据
+        const quizRecords = await getAllQuizRecords();
+        setRecords(quizRecords);
       } catch (error) {
         console.error('加载档案数据失败:', error);
       } finally {
