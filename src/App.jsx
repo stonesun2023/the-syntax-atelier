@@ -3,6 +3,7 @@ import { useState } from 'react';
 import InputPanel from './components/InputPanel';
 import AnalysisPanel from './components/AnalysisPanel';
 import ChallengeMode from './components/ChallengeMode';
+import ArchiveMode from './components/ArchiveMode';
 import SettingsPanel from './components/SettingsPanel';
 import { analyzeSentence } from './services/claudeApi';
 import { saveAnalysis, checkAndUnlockAchievements } from './services/db';
@@ -108,13 +109,7 @@ export default function App() {
             </div>
           )
         )}
-        {mode === 'archive' && (
-          <div className="text-center py-20 text-apple-muted">
-            <div className="text-4xl mb-4">📚</div>
-            <p className="text-lg font-medium text-apple-black">学习档案</p>
-            <p className="mt-2 text-sm">第三阶段开发中，解构记录已在本地保存</p>
-          </div>
-        )}
+        {mode === 'archive' && <ArchiveMode />}
       </main>
       {newAchievements.length > 0 && (
         <div className="fixed bottom-6 right-6 flex flex-col gap-2">
