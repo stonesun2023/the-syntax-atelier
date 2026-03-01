@@ -82,7 +82,7 @@ const ACHIEVEMENTS = [
  * @returns {Promise<Array>} 新解锁的成就数组
  */
 export async function checkAndUnlockAchievements(trigger, payload) {
-  const unlocked = await getAllQuizRecords(); // 获取所有已解锁的成就记录
+  const unlocked = await getUnlockedAchievements(); // 获取所有已解锁的成就记录
   const unlockedIds = unlocked.map(a => a.achievementId);
   const newlyUnlocked = [];
   
