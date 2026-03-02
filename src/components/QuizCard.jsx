@@ -23,21 +23,15 @@ export default function QuizCard({ question, questionIndex, total, onAnswer, onS
     
     setSelectedOption(optionIndex);
     setIsLocked(true);
-    
-    // 判断是否正确（选项索引对应 A=0, B=1, C=2, D=3）
-    const isCorrect = optionIndex === question.correct.charCodeAt(0) - 'A'.charCodeAt(0);
-    
-    // 延迟调用 onAnswer，让用户看到反馈效果
-    setTimeout(() => {
-      onAnswer(isCorrect);
-    }, 1000);
   };
 
   const handleSkip = () => {
     setIsLocked(true);
-    setTimeout(() => {
-      onSkip();
-    }, 1000);
+  };
+
+  const handleNextQuestion = () => {
+    const isCorrect = selectedOption === question.correct.charCodeAt(0) - 'A'.charCodeAt(0);
+    onAnswer(isCorrect);
   };
 
   const getOptionLabel = (index) => {
@@ -112,10 +106,10 @@ export default function QuizCard({ question, questionIndex, total, onAnswer, onS
         </button>
         {isLocked && (
           <button
-            onClick={() => onAnswer(false)} // 跳过也算回答，但标记为错误
+            onClick={handleNextQuestion}
             className="px-6 py-2 bg-apple-blue text-white rounded-full text-sm font-medium hover:bg-blue-600 transition-colors"
           >
-            下一题
+            下一题 →
           </button>
         )}
       </div>

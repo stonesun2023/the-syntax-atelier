@@ -1,5 +1,4 @@
 // src/services/claudeApi.js
-// AI 引擎：智谱 GLM-4-Flash
 
 const SYSTEM_PROMPT = `你是一位语言教育专家与逻辑分析师，专注于英语长难句的结构解析与教学。
 
@@ -57,52 +56,7 @@ const SYSTEM_PROMPT = `你是一位语言教育专家与逻辑分析师，专注
   "confidence": 95
 }`;
 
-export async function analyzeSentence(sentence) {
-  const apiKey = import.meta.env.VITE_GLM_API_KEY;
-  if (!apiKey) throw new Error('未找到 API Key，请在 .env 文件中设置 VITE_GLM_API_KEY');
-
-  const selectedModel = localStorage.getItem('selectedModel') || 'glm-4-flash';
-
-  const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: selectedModel,
-      messages: [
-        { role: 'system', content: SYSTEM_PROMPT },
-        { role: 'user', content: `请解构以下英文句子：\n\n${sentence}` },
-      ],
-      max_tokens: 2000,
-    }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(`API 请求失败：${error.error?.message || response.statusText}`);
-  }
-
-  const data = await response.json();
-  const rawText = data.choices[0]?.message?.content || '';
-  const cleaned = rawText.replace(/```json|```/g, '').trim();
-
-  try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    console.error('JSON 解析失败，原始返回：', rawText);
-    throw new Error('AI 返回格式异常，请重试');
-  }
-}
-
-export async function generateQuiz(sentence, analysisResult) {
-  const apiKey = import.meta.env.VITE_GLM_API_KEY;
-  if (!apiKey) throw new Error('未找到 API Key，请在 .env 文件中设置 VITE_GLM_API_KEY');
-
-  const selectedModel = localStorage.getItem('selectedModel') || 'glm-4-flash';
-
-  const QUIZ_PROMPT = `你是一位语言教育专家，根据提供的英文句子和解构结果，生成4道选择题。
+const QUIZ_PROMPT = `你是一位语言教育专家，根据提供的英文句子和解构结果，生成4道选择题。
 
 重要规则：
 1. 题目文本（question字段）和选项中，禁止使用"+"符号连接句子成分。
@@ -129,29 +83,157 @@ export async function generateQuiz(sentence, analysisResult) {
   }
 ]`;
 
-  const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify({
-      model: selectedModel,
-      messages: [
-        { role: 'system', content: QUIZ_PROMPT },
-        { role: 'user', content: `原句：${sentence}\n\n解构结果：${JSON.stringify(analysisResult)}` },
-      ],
-      max_tokens: 2000,
-    }),
-  });
+/**
+ * 获取模型配置
+ * @returns {Object} { endpoint, apiKey, modelId, provider }
+ */
+export function getModelConfig() {
+  const selectedModel = localStorage.getItem('selectedModel') || 'glm-4-flash';
+  
+  // 获取 API Key
+  let apiKey;
+  if (selectedModel.startsWith('glm-')) {
+    apiKey = localStorage.getItem('apiKey_glm');
+  } else {
+    apiKey = localStorage.getItem(`apiKey_${selectedModel}`);
+  }
+  
+  // 模型配置
+  const modelConfigs = {
+    'glm-4-flash': { endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', provider: 'zhipu' },
+    'glm-4-air': { endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', provider: 'zhipu' },
+    'glm-4-plus': { endpoint: 'https://open.bigmodel.cn/api/paas/v4/chat/completions', provider: 'zhipu' },
+    'gemini-2.0-flash': { endpoint: 'https://generativelanguage.googleapis.com/v1beta/openai/chat/completions', provider: 'google' },
+    'gpt-4o-mini': { endpoint: 'https://api.openai.com/v1/chat/completions', provider: 'openai' },
+    'claude-haiku-4-5-20251001': { endpoint: 'https://api.anthropic.com/v1/messages', provider: 'anthropic' },
+    'grok-3-mini': { endpoint: 'https://api.x.ai/v1/chat/completions', provider: 'xAI' }
+  };
+  
+  const config = modelConfigs[selectedModel];
+  
+  if (!config) {
+    throw new Error(`不支持的模型：${selectedModel}`);
+  }
+  
+  if (!apiKey) {
+    throw new Error(`请先在设置中配置 ${selectedModel} 的 API Key`);
+  }
+  
+  return {
+    endpoint: config.endpoint,
+    apiKey: apiKey,
+    modelId: selectedModel,
+    provider: config.provider
+  };
+}
 
-  const data = await response.json();
-  const rawText = data.choices[0]?.message?.content || '';
-  const cleaned = rawText.replace(/```json|```/g, '').trim();
+/**
+ * 构建请求头
+ * @param {string} provider 
+ * @param {string} apiKey 
+ * @returns {Object} headers
+ */
+function buildHeaders(provider, apiKey) {
+  switch (provider) {
+    case 'anthropic':
+      return {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01'
+      };
+    default:
+      return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
+      };
+  }
+}
 
+/**
+ * 构建请求体
+ * @param {string} provider 
+ * @param {string} modelId 
+ * @param {Array} messages 
+ * @param {number} maxTokens 
+ * @returns {Object} body
+ */
+function buildRequestBody(provider, modelId, messages, maxTokens) {
+  switch (provider) {
+    case 'anthropic':
+      return {
+        model: modelId,
+        messages: messages,
+        max_tokens: maxTokens
+      };
+    default:
+      return {
+        model: modelId,
+        messages: messages,
+        max_tokens: maxTokens
+      };
+  }
+}
+
+export async function analyzeSentence(sentence) {
   try {
-    return JSON.parse(cleaned);
-  } catch (e) {
-    throw new Error('出题失败，请重试');
+    const { endpoint, apiKey, modelId, provider } = getModelConfig();
+
+    const messages = [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: `请解构以下英文句子：\n\n${sentence}` }
+    ];
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: buildHeaders(provider, apiKey),
+      body: JSON.stringify(buildRequestBody(provider, modelId, messages, 2000)),
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`API 请求失败：${error.error?.message || response.statusText}`);
+    }
+
+    const data = await response.json();
+    const rawText = data.choices[0]?.message?.content || '';
+    const cleaned = rawText.replace(/```json|```/g, '').trim();
+
+    try {
+      return JSON.parse(cleaned);
+    } catch (e) {
+      console.error('JSON 解析失败，原始返回：', rawText);
+      throw new Error('AI 返回格式异常，请重试');
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
+export async function generateQuiz(sentence, analysisResult) {
+  try {
+    const { endpoint, apiKey, modelId, provider } = getModelConfig();
+
+    const messages = [
+      { role: 'system', content: QUIZ_PROMPT },
+      { role: 'user', content: `原句：${sentence}\n\n解构结果：${JSON.stringify(analysisResult)}` }
+    ];
+
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: buildHeaders(provider, apiKey),
+      body: JSON.stringify(buildRequestBody(provider, modelId, messages, 2000)),
+    });
+
+    const data = await response.json();
+    const rawText = data.choices[0]?.message?.content || '';
+    const cleaned = rawText.replace(/```json|```/g, '').trim();
+
+    try {
+      return JSON.parse(cleaned);
+    } catch (e) {
+      throw new Error('出题失败，请重试');
+    }
+  } catch (error) {
+    throw error;
   }
 }
