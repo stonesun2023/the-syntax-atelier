@@ -15,8 +15,13 @@ const SYSTEM_PROMPT = `你是一位语言教育专家与逻辑分析师，专注
 1. logic_blocks 中所有 text 字段拼接后必须 100% 等于原句
 2. 只输出合法 JSON，不含任何 Markdown 标记
 3. 三阶译文：L1直白平铺，L2语序重排消除翻译腔，L3意象脱壳实现信达雅
-4. expert_alert 仅在倒装、虚拟语气、插入语、双重否定时触发，否则为空字符串
-5. confidence 为解析准确性置信度（0-100）
+4. 严格要求：graded_translations 中的三个字段必须是中文翻译，绝对不能返回英文原文。
+5. 如果句子较复杂，仍然必须给出中文翻译，不得以任何理由返回原文。
+6. foundation：直白的中文翻译，主谓宾齐全
+7. intermediate：语序符合中文习惯的翻译
+8. professional：意象脱壳、信达雅的中文翻译
+9. expert_alert 仅在倒装、虚拟语气、插入语、双重否定时触发，否则为空字符串
+10. confidence 为解析准确性置信度（0-100）
 
 输出格式（只输出 JSON，不要有任何其他内容）：
 {
@@ -98,6 +103,12 @@ export async function generateQuiz(sentence, analysisResult) {
   const selectedModel = localStorage.getItem('selectedModel') || 'glm-4-flash';
 
   const QUIZ_PROMPT = `你是一位语言教育专家，根据提供的英文句子和解构结果，生成4道选择题。
+
+重要规则：
+1. 题目文本（question字段）和选项中，禁止使用"+"符号连接句子成分。
+2. 禁止在题干中直接呈现答案结构。题目应描述任务，而不是展示答案。
+3. 错误示例："找出句子主干：The cat + sat + on the mat"
+4. 正确示例："以下哪个选项正确提取了该句的主干S+V+O？"
 
 题型：
 - L1_skeleton：找出正确主干 S+V+O

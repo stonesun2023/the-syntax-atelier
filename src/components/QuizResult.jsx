@@ -38,7 +38,12 @@ ${results.map((r, i) => `第${i+1}题：${r.isCorrect ? '✓ 答对' : r.skipped
 
 原始句子：${sentence}
 
-请分析用户的强项与盲点，给出具体的学习建议。`;
+请直接输出分析内容，不要包含任何用户称呼或占位符。
+
+输出格式要求：
+强项：[内容]
+待加强：[内容]
+建议：[内容]`;
 
       const response = await fetch('https://open.bigmodel.cn/api/paas/v4/chat/completions', {
         method: 'POST',
@@ -136,7 +141,13 @@ ${results.map((r, i) => `第${i+1}题：${r.isCorrect ? '✓ 答对' : r.skipped
         {analysis && (
           <div className="mt-4 bg-apple-black text-white rounded-2xl p-4">
             <div className="text-sm font-semibold mb-2">AI 学习分析</div>
-            <div className="text-gray-200 text-sm leading-relaxed">{analysis}</div>
+            <div className="space-y-2">
+              {analysis.split('\n').map((line, index) => (
+                <div key={index} className="text-gray-200 text-sm leading-relaxed">
+                  {line}
+                </div>
+              ))}
+            </div>
           </div>
         )}
       </div>

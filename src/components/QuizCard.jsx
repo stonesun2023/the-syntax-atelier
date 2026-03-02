@@ -1,5 +1,5 @@
 // src/components/QuizCard.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const TYPE_LABELS = {
   'L1_skeleton': '剥离术：找主干',
@@ -11,6 +11,12 @@ const TYPE_LABELS = {
 export default function QuizCard({ question, questionIndex, total, onAnswer, onSkip }) {
   const [selectedOption, setSelectedOption] = useState(null);
   const [isLocked, setIsLocked] = useState(false);
+
+  // 当题目变化时重置状态
+  useEffect(() => {
+    setSelectedOption(null);
+    setIsLocked(false);
+  }, [question]);
 
   const handleOptionClick = (optionIndex) => {
     if (isLocked) return;
