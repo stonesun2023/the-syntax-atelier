@@ -19,11 +19,18 @@ export default function SettingsPanel({ isOpen, onClose }) {
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [keyInputs, setKeyInputs] = useState({});
 
+  const handleModelChange = (modelId) => {
+    setSelectedModel(modelId);
+    localStorage.setItem('selectedModel', modelId);
+  };
+
   // 初始化 keyInputs，从 localStorage 读取已保存的值
   const initializeKeyInputs = () => {
     const inputs = {};
     MODELS.forEach(model => {
-      inputs[model.id] = getApiKey(model.id) || '';
+      const keyName = model.id.startsWith('glm-') ? 'apiKey_glm' : `apiKey_${model.id}`;
+      const saved = localStorage.getItem(keyName);
+      if (saved) inputs[model.id] = saved;
     });
     setKeyInputs(inputs);
   };
@@ -32,11 +39,6 @@ export default function SettingsPanel({ isOpen, onClose }) {
   if (isOpen && Object.keys(keyInputs).length === 0) {
     initializeKeyInputs();
   }
-
-  const handleModelChange = (modelId) => {
-    setSelectedModel(modelId);
-    localStorage.setItem('selectedModel', modelId);
-  };
 
   const getApiKey = (modelId) => {
     if (modelId.startsWith('glm-')) {
