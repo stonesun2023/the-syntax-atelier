@@ -1,5 +1,5 @@
 // src/components/SettingsPanel.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 
 const MODELS = [
   { id: 'glm-4-flash', name: 'GLM-4-Flash（默认）', note: 'https://open.bigmodel.cn', provider: 'zhipu' },
@@ -18,6 +18,7 @@ export default function SettingsPanel({ isOpen, onClose }) {
   const [expandedKey, setExpandedKey] = useState(null);
   const [showSavedToast, setShowSavedToast] = useState(false);
   const [keyInputs, setKeyInputs] = useState({});
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const handleModelChange = (modelId) => {
     setSelectedModel(modelId);
@@ -37,10 +38,11 @@ export default function SettingsPanel({ isOpen, onClose }) {
 
   // 当面板打开时初始化输入框值
   useEffect(() => {
-    if (isOpen && Object.keys(keyInputs).length === 0) {
+    if (isOpen && !isInitialized) {
       initializeKeyInputs();
+      setIsInitialized(true);
     }
-  }, [isOpen, keyInputs]);
+  }, [isOpen, isInitialized]);
 
   const getApiKey = (modelId) => {
     if (modelId.startsWith('glm-')) {
