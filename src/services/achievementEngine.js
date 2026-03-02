@@ -1,5 +1,5 @@
 // src/services/achievementEngine.js
-import { getAnalysisCount, getAllQuizRecords, unlockAchievement } from './db';
+import { getAnalysisCount, getAllQuizRecords, unlockAchievement, getUnlockedAchievements } from './db';
 
 // 成就定义
 const ACHIEVEMENTS = [
