@@ -16,6 +16,7 @@ export default function SettingsPanel({ isOpen, onClose }) {
     return localStorage.getItem('selectedModel') || 'glm-4-flash';
   });
   const [expandedKey, setExpandedKey] = useState(null);
+  const [showSavedToast, setShowSavedToast] = useState(false);
 
   const handleModelChange = (modelId) => {
     setSelectedModel(modelId);
@@ -40,6 +41,8 @@ export default function SettingsPanel({ isOpen, onClose }) {
   const handleApiKeySave = (modelId, key) => {
     setApiKey(modelId, key);
     setExpandedKey(null);
+    setShowSavedToast(true);
+    setTimeout(() => setShowSavedToast(false), 2000);
   };
 
   const handleApiKeyClear = (modelId) => {
@@ -153,6 +156,12 @@ export default function SettingsPanel({ isOpen, onClose }) {
             确定
           </button>
         </div>
+
+        {showSavedToast && (
+          <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg animate-in slide-in-from-bottom-2 duration-300">
+            已保存 ✓
+          </div>
+        )}
       </div>
     </div>
   );
