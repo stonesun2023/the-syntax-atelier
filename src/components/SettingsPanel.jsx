@@ -17,6 +17,21 @@ export default function SettingsPanel({ isOpen, onClose }) {
   });
   const [expandedKey, setExpandedKey] = useState(null);
   const [showSavedToast, setShowSavedToast] = useState(false);
+  const [keyInputs, setKeyInputs] = useState({});
+
+  // 初始化 keyInputs，从 localStorage 读取已保存的值
+  const initializeKeyInputs = () => {
+    const inputs = {};
+    MODELS.forEach(model => {
+      inputs[model.id] = getApiKey(model.id) || '';
+    });
+    setKeyInputs(inputs);
+  };
+
+  // 当面板打开时初始化输入框值
+  if (isOpen && Object.keys(keyInputs).length === 0) {
+    initializeKeyInputs();
+  }
 
   const handleModelChange = (modelId) => {
     setSelectedModel(modelId);
@@ -114,21 +129,24 @@ export default function SettingsPanel({ isOpen, onClose }) {
                       <input
                         type="password"
                         placeholder="请输入 API Key"
-                        defaultValue={getApiKey(model.id) || ''}
+                        value={keyInputs[model.id] || ''}
+                        onChange={(e) => setKeyInputs(prev => ({...prev, [model.id]: e.target.value}))}
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-apple-blue focus:border-transparent"
                       />
                       <div className="flex gap-2">
                         <button
-                          onClick={(e) => {
-                            const input = e.currentTarget.parentElement.querySelector('input');
-                            handleApiKeySave(model.id, input.value);
+                          onClick={() => {
+                            handleApiKeySave(model.id, keyInputs[model.id] || '');
                           }}
                           className="flex-1 bg-apple-blue text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors"
                         >
                           保存
                         </button>
                         <button
-                          onClick={() => handleApiKeyClear(model.id)}
+                          onClick={() => {
+                            setKeyInputs(prev => ({...prev, [model.id]: ''}));
+                            handleApiKeyClear(model.id);
+                          }}
                           className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                         >
                           清除
